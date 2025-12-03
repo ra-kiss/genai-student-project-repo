@@ -1,12 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Layout, Typography, ConfigProvider, theme, App } from 'antd';
+import { Layout, Typography, ConfigProvider, theme, App, Button, Badge } from 'antd';
+import { CreditCardOutlined } from '@ant-design/icons';
 import NoteEditor from '../components/NoteEditor';
 import AIExplanation from '../components/AIExplanation';
 import NotesDropdown from '../components/NotesDropdown';
+import FlashcardModal from '../components/FlashcardModal';
 import { useOpenAI } from '../hooks/useOpenAI';
 import { useNote } from '../hooks/useNote';
+import { useFlashcards } from '../hooks/useFlashcards';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -15,6 +18,7 @@ function HomeContent() {
   const [selectedText, setSelectedText] = useState('');
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [drawerMode, setDrawerMode] = useState<'explain' | 'expand' | 'summarize'>('explain');
+  const [flashcardModalVisible, setFlashcardModalVisible] = useState(false);
   
   const { 
     note: currentNote,
@@ -32,16 +36,27 @@ function HomeContent() {
     isExplaining, 
     isExpanding,
     isSummarizing,
+    isGeneratingFlashcards,
     explanation, 
     expansion,
     summary,
+    flashcards: generatedFlashcards,
     explain, 
     expand,
     summarize,
+    generateCards,
     clearExplanation,
     clearExpansion,
     clearSummary,
+    clearFlashcards: clearGeneratedFlashcards,
   } = useOpenAI();
+
+  const {
+    flashcards: savedFlashcards,
+    setNewFlashcards,
+    updateFlashcard,
+    deleteFlashcard,
+  } = useFlashcards(currentNote?.id || '');
 
   /**
    * Handle explanation request from NoteEditor
@@ -83,6 +98,62 @@ function HomeContent() {
     clearSummary();
     setSelectedText('');
   };
+
+  /**
+   * Generate flashcards from current note
+   */
+  const handleGenerateFlashcards = async () => {
+    if (!currentNote?.content) return;
+    
+    await generateCards(currentNote.content);
+  };
+
+  /**
+   * Open flashcard modal
+   */
+  const handleOpenFlashcards = () => {
+    if (savedFlashcards.length > 0) {
+      // Show saved flashcards
+      setFlashcardModalVisible(true);
+    } else if (generatedFlashcards.length > 0) {
+      // Show newly generated flashcards and save them
+      setNewFlashcards(generatedFlashcards);
+      setFlashcardModalVisible(true);
+      clearGeneratedFlashcards();
+    } else {
+      // Generate new flashcards
+      handleGenerateFlashcards();
+    }
+  };
+
+  /**
+   * Handle flashcard modal close
+   */
+  const handleCloseFlashcardModal = () => {
+    setFlashcardModalVisible(false);
+  };
+
+  /**
+   * Handle regenerate flashcards
+   */
+  const handleRegenerateFlashcards = async () => {
+    if (!currentNote?.content) return;
+    
+    setFlashcardModalVisible(false);
+    await generateCards(currentNote.content);
+    // Will automatically show the modal when generation completes
+  };
+
+  /**
+   * Auto-open modal when flashcards are generated
+   */
+  React.useEffect(() => {
+    if (generatedFlashcards.length > 0 && !isGeneratingFlashcards) {
+      setNewFlashcards(generatedFlashcards);
+      setFlashcardModalVisible(true);
+      clearGeneratedFlashcards();
+    }
+  }, [generatedFlashcards, isGeneratingFlashcards]);
 
   /**
    * Get current content and loading state based on mode
@@ -129,13 +200,24 @@ function HomeContent() {
           AI-Powered Notes
         </Title>
         
-        <NotesDropdown
-          currentNote={currentNote}
-          allNotes={allNotes}
-          onSelectNote={switchNote}
-          onCreateNote={createNewNote}
-          onDeleteNote={deleteNote}
-        />
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <Button
+              type="primary"
+              icon={<CreditCardOutlined />}
+              onClick={handleOpenFlashcards}
+              loading={isGeneratingFlashcards}
+            >
+              {savedFlashcards.length > 0 ? `Flashcards ( ${savedFlashcards.length} )` : 'Generate Flashcards'}
+            </Button>
+          
+          <NotesDropdown
+            currentNote={currentNote}
+            allNotes={allNotes}
+            onSelectNote={switchNote}
+            onCreateNote={createNewNote}
+            onDeleteNote={deleteNote}
+          />
+        </div>
       </Header>
 
       {/* Main Content */}
@@ -168,6 +250,16 @@ function HomeContent() {
         isLoading={isLoading}
         onClose={handleCloseDrawer}
         mode={drawerMode}
+      />
+
+      {/* Flashcard Modal */}
+      <FlashcardModal
+        visible={flashcardModalVisible}
+        flashcards={savedFlashcards}
+        onClose={handleCloseFlashcardModal}
+        onRegenerate={handleRegenerateFlashcards}
+        onUpdateFlashcard={updateFlashcard}
+        onDeleteFlashcard={deleteFlashcard}
       />
     </Layout>
   );

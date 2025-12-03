@@ -143,20 +143,7 @@ export default function NoteEditor({
         <MarkdownEditor
           value={note.content}
           onChange={onContentChange}
-          placeholder="Start typing your notes here... 
-
-You can use markdown:
-# Heading 1
-## Heading 2
-**bold** and _italic_
-- bullet lists
-1. numbered lists
-`inline code`
-```javascript
-code blocks
-```
-
-Select text and use AI tools to explain, expand, or summarize!"
+          placeholder="Start typing your notes here..."
         />
       </div>
     </div>

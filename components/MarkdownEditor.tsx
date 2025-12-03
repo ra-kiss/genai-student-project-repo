@@ -223,14 +223,9 @@ export default function MarkdownEditor({
     td: ({ children }) => (
       <td style={{ border: '1px solid #303030', padding: '8px' }}>{children}</td>
     ),
-    a: ({ children, href }) => (
-      <a
-        rel="noopener noreferrer"
-        style={{ color: '#1890ff', textDecoration: 'none' }}
-      >
-        {children}
-      </a>
-    )
+    a: ({ children }) => {
+      return <span style={{ color: '#1890ff' }}>{children}</span>;
+    }
   };
 
   /**
