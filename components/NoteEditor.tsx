@@ -6,6 +6,7 @@ import {
   BulbOutlined,
   ExpandOutlined,
   CompressOutlined,
+  SaveOutlined,
 } from '@ant-design/icons';
 import { Note } from '../types';
 import MarkdownEditor from './MarkdownEditor';
@@ -18,6 +19,7 @@ interface NoteEditorProps {
   onTitleChange: (title: string) => void;
   isSaving: boolean;
   lastSaved: Date | null;
+  saveNote: () => void;
   onExplainRequest: (selectedText: string) => void;
   onExpandRequest: (selectedText: string) => void;
   onSummarizeRequest: (selectedText: string) => void;
@@ -29,6 +31,7 @@ export default function NoteEditor({
   onTitleChange,
   isSaving,
   lastSaved,
+  saveNote,
   onExplainRequest, 
   onExpandRequest,
   onSummarizeRequest 
@@ -129,6 +132,16 @@ export default function NoteEditor({
 
         {/* Save Status */}
         <Space size="small">
+          <Tooltip title="Save Now">
+            <Button
+              icon={<SaveOutlined />}
+              onClick={saveNote}
+              size="small"
+              loading={isSaving}
+            >
+              Save
+            </Button>
+          </Tooltip>
           {isSaving && <Text type="secondary">Saving...</Text>}
           {!isSaving && lastSaved && (
             <Text type="secondary" style={{ fontSize: '12px' }}>
@@ -143,8 +156,8 @@ export default function NoteEditor({
         <MarkdownEditor
           value={note.content}
           onChange={onContentChange}
-          placeholder="Start typing your notes here..."
-        />
+          placeholder="Start typing your notes here... "
+       />
       </div>
     </div>
   );

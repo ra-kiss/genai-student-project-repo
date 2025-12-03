@@ -255,7 +255,7 @@ export default function MarkdownEditor({
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Toolbar */}
       <Space style={{ marginBottom: '12px' }} wrap>
-        <Tooltip title="Bold (Ctrl+B)">
+        <Tooltip title="Bold">
           <Button
             icon={<BoldOutlined />}
             onClick={() => insertFormatting('**', '**')}
@@ -264,7 +264,7 @@ export default function MarkdownEditor({
           />
         </Tooltip>
 
-        <Tooltip title="Italic (Ctrl+I)">
+        <Tooltip title="Italic">
           <Button
             icon={<ItalicOutlined />}
             onClick={() => insertFormatting('_', '_')}

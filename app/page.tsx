@@ -7,9 +7,13 @@ import NoteEditor from '../components/NoteEditor';
 import AIExplanation from '../components/AIExplanation';
 import NotesDropdown from '../components/NotesDropdown';
 import FlashcardModal from '../components/FlashcardModal';
+import ExportDropdown from '../components/ExportDropdown';
+import ImportDropdown from '../components/ImportDropdown';
 import { useOpenAI } from '../hooks/useOpenAI';
 import { useNote } from '../hooks/useNote';
 import { useFlashcards } from '../hooks/useFlashcards';
+import { Note, Flashcard } from '../types';
+import { saveNote as saveNoteToStorage } from '../lib/storage';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -28,6 +32,7 @@ function HomeContent() {
     createNewNote,
     switchNote,
     deleteNote,
+    saveNote,
     isSaving,
     lastSaved,
   } = useNote();
@@ -54,8 +59,10 @@ function HomeContent() {
   const {
     flashcards: savedFlashcards,
     setNewFlashcards,
+    importFlashcards: importFlashcardsToNote,
     updateFlashcard,
     deleteFlashcard,
+    refreshFlashcards,
   } = useFlashcards(currentNote?.id || '');
 
   /**
@@ -145,6 +152,40 @@ function HomeContent() {
   };
 
   /**
+   * Handle import note
+   */
+  const handleImportNote = (note: Note) => {
+    // Save the imported note to storage
+    saveNoteToStorage(note);
+    
+    // Switch to the imported note
+    switchNote(note.id);
+  };
+
+  /**
+   * Handle import flashcards
+   */
+  const handleImportFlashcards = (flashcards: Flashcard[], targetNoteId: string) => {
+    // Get the hook instance for the target note
+    const STORAGE_KEY_PREFIX = 'flashcards-';
+    const existingFlashcardsJson = localStorage.getItem(`${STORAGE_KEY_PREFIX}${targetNoteId}`);
+    const existingFlashcards = existingFlashcardsJson ? JSON.parse(existingFlashcardsJson) : [];
+    
+    // Merge and save
+    const merged = [...existingFlashcards, ...flashcards.map(card => ({
+      ...card,
+      noteId: targetNoteId,
+    }))];
+    
+    localStorage.setItem(`${STORAGE_KEY_PREFIX}${targetNoteId}`, JSON.stringify(merged));
+    
+    // If importing to current note, refresh the display immediately
+    if (targetNoteId === currentNote?.id) {
+      refreshFlashcards();
+    }
+  };
+
+  /**
    * Auto-open modal when flashcards are generated
    */
   React.useEffect(() => {
@@ -196,9 +237,18 @@ function HomeContent() {
         alignItems: 'center',
         justifyContent: 'space-between',
       }}>
-        <Title level={3} style={{ margin: 0, color: '#fff' }}>
-          AI-Powered Notes
-        </Title>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <Title level={3} style={{ margin: 0, color: '#fff' }}>
+            AI-Powered Notes
+          </Title>
+          <ExportDropdown currentNote={currentNote} flashcards={savedFlashcards} />
+          <ImportDropdown 
+            onImportNote={handleImportNote}
+            onImportFlashcards={handleImportFlashcards}
+            allNotes={allNotes}
+            currentNoteId={currentNote.id}
+          />
+        </div>
         
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <Button
@@ -234,6 +284,7 @@ function HomeContent() {
             onTitleChange={updateTitle}
             isSaving={isSaving}
             lastSaved={lastSaved}
+            saveNote={saveNote}
             onExplainRequest={handleExplainRequest}
             onExpandRequest={handleExpandRequest}
             onSummarizeRequest={handleSummarizeRequest}

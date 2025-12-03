@@ -11,8 +11,10 @@ const STORAGE_KEY_PREFIX = 'flashcards-';
 export function useFlashcards(noteId: string) {
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
 
-  // Load flashcards when noteId changes
-  useEffect(() => {
+  /**
+   * Load flashcards from storage
+   */
+  const loadFlashcards = useCallback(() => {
     if (typeof window === 'undefined' || !noteId) return;
 
     try {
@@ -27,6 +29,11 @@ export function useFlashcards(noteId: string) {
       setFlashcards([]);
     }
   }, [noteId]);
+
+  // Load flashcards when noteId changes
+  useEffect(() => {
+    loadFlashcards();
+  }, [loadFlashcards]);
 
   /**
    * Save flashcards to localStorage
@@ -54,6 +61,18 @@ export function useFlashcards(noteId: string) {
   }, [noteId, saveFlashcards]);
 
   /**
+   * Import flashcards (appends to existing)
+   */
+  const importFlashcards = useCallback((cards: Flashcard[]) => {
+    const cardsWithNoteId = cards.map(card => ({
+      ...card,
+      noteId,
+    }));
+    const merged = [...flashcards, ...cardsWithNoteId];
+    saveFlashcards(merged);
+  }, [noteId, flashcards, saveFlashcards]);
+
+  /**
    * Update a single flashcard
    */
   const updateFlashcard = useCallback((id: string, question: string, answer: string) => {
@@ -78,11 +97,20 @@ export function useFlashcards(noteId: string) {
     saveFlashcards([]);
   }, [saveFlashcards]);
 
+  /**
+   * Refresh flashcards from storage
+   */
+  const refreshFlashcards = useCallback(() => {
+    loadFlashcards();
+  }, [loadFlashcards]);
+
   return {
     flashcards,
     setNewFlashcards,
+    importFlashcards,
     updateFlashcard,
     deleteFlashcard,
     clearFlashcards,
+    refreshFlashcards,
   };
 }
