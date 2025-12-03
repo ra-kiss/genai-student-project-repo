@@ -58,6 +58,52 @@ export async function explainText(text: string): Promise<string> {
 }
 
 /**
+ * Expands a selected piece of text with more detail and context
+ * Useful for brief notes that need elaboration
+ */
+export async function expandText(text: string): Promise<string> {
+  if (!text.trim()) {
+    throw new Error('No text provided to expand');
+  }
+
+  const messages = [
+    {
+      role: 'system',
+      content: 'You are a helpful computer science tutor. Expand on the given text by adding more detail, context, examples, and explanations. Make it comprehensive and educational for a university student.',
+    },
+    {
+      role: 'user',
+      content: `Please expand on the following text with more detail, examples, and context:\n\n${text}`,
+    },
+  ];
+
+  return await makeOpenAIRequest(messages);
+}
+
+/**
+ * Summarizes a selected piece of text into key points
+ * Useful for condensing long passages or complex explanations
+ */
+export async function summarizeText(text: string): Promise<string> {
+  if (!text.trim()) {
+    throw new Error('No text provided to summarize');
+  }
+
+  const messages = [
+    {
+      role: 'system',
+      content: 'You are a helpful study assistant. Summarize the given text into clear, concise key points. Focus on the most important information that a computer science student should remember.',
+    },
+    {
+      role: 'user',
+      content: `Please summarize the following text into key points:\n\n${text}`,
+    },
+  ];
+
+  return await makeOpenAIRequest(messages);
+}
+
+/**
  * Generates flashcards from note content
  * Creates question-answer pairs suitable for studying
  */

@@ -8,6 +8,8 @@ import {
   BoldOutlined,
   ItalicOutlined,
   BulbOutlined,
+  ExpandOutlined,
+  CompressOutlined,
 } from '@ant-design/icons';
 import { useNote } from '../hooks/useNote';
 
@@ -16,9 +18,15 @@ const { Text } = Typography;
 
 interface NoteEditorProps {
   onExplainRequest: (selectedText: string) => void;
+  onExpandRequest: (selectedText: string) => void;
+  onSummarizeRequest: (selectedText: string) => void;
 }
 
-export default function NoteEditor({ onExplainRequest }: NoteEditorProps) {
+export default function NoteEditor({ 
+  onExplainRequest, 
+  onExpandRequest,
+  onSummarizeRequest 
+}: NoteEditorProps) {
   const { note, updateContent, updateTitle, isSaving, lastSaved } = useNote();
   const [selectedText, setSelectedText] = useState('');
   const textAreaRef = React.useRef<any>(null);
@@ -138,6 +146,30 @@ export default function NoteEditor({ onExplainRequest }: NoteEditorProps) {
           </Button>
         </Tooltip>
 
+        <Tooltip title="Expand Selected Text">
+          <Button
+            icon={<ExpandOutlined />}
+            onClick={() => selectedText && onExpandRequest(selectedText)}
+            disabled={!selectedText}
+            type={selectedText ? 'default' : 'default'}
+            size="small"
+          >
+            Expand
+          </Button>
+        </Tooltip>
+
+        <Tooltip title="Summarize Selected Text">
+          <Button
+            icon={<CompressOutlined />}
+            onClick={() => selectedText && onSummarizeRequest(selectedText)}
+            disabled={!selectedText}
+            type={selectedText ? 'default' : 'default'}
+            size="small"
+          >
+            Summarize
+          </Button>
+        </Tooltip>
+
         <div style={{ flex: 1 }} />
 
         {/* Save Status */}
@@ -162,6 +194,8 @@ export default function NoteEditor({ onExplainRequest }: NoteEditorProps) {
 You can:
 - Use markdown formatting (bold, italic, code blocks)
 - Select text and click 'Explain' to get AI explanations
+- Select text and click 'Expand' to get more detailed explanations
+- Select text and click 'Summarize' to get concise summaries
 - Generate flashcards from your notes
 
 Your notes are automatically saved every 3 seconds."

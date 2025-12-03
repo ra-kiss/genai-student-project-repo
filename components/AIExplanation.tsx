@@ -4,6 +4,8 @@ import React from 'react';
 import { Drawer, Typography, Button, Space, Divider, Card, App } from 'antd';
 import {
   BulbOutlined,
+  ExpandOutlined,
+  CompressOutlined,
   CopyOutlined,
 } from '@ant-design/icons';
 
@@ -11,37 +13,55 @@ const { Title, Paragraph, Text } = Typography;
 
 interface AIExplanationProps {
   visible: boolean;
-  explanation: string | null;
+  content: string | null;
   originalText: string;
   isLoading: boolean;
   onClose: () => void;
+  mode: 'explain' | 'expand' | 'summarize';
 }
 
 export default function AIExplanation({
   visible,
-  explanation,
+  content,
   originalText,
   isLoading,
   onClose,
+  mode,
 }: AIExplanationProps) {
   const { message } = App.useApp();
 
   /**
-   * Copy explanation to clipboard
+   * Copy content to clipboard
    */
   const handleCopy = () => {
-    if (explanation) {
-      navigator.clipboard.writeText(explanation);
-      message.success('Explanation copied to clipboard!');
+    if (content) {
+      navigator.clipboard.writeText(content);
+      message.success('Copied to clipboard!');
     }
   };
+
+  /**
+   * Get title and icon based on mode
+   */
+  const getTitle = () => {
+    switch (mode) {
+      case 'explain':
+        return { text: 'AI Explanation', icon: <BulbOutlined style={{ color: '#1890ff' }} /> };
+      case 'expand':
+        return { text: 'AI Expansion', icon: <ExpandOutlined style={{ color: '#52c41a' }} /> };
+      case 'summarize':
+        return { text: 'AI Summary', icon: <CompressOutlined style={{ color: '#faad14' }} /> };
+    }
+  };
+
+  const title = getTitle();
 
   return (
     <Drawer
       title={
         <Space>
-          <BulbOutlined style={{ color: '#1890ff' }} />
-          <span>AI Explanation</span>
+          {title.icon}
+          <span>{title.text}</span>
         </Space>
       }
       placement="right"
@@ -53,7 +73,7 @@ export default function AIExplanation({
           icon={<CopyOutlined />}
           onClick={handleCopy}
           size="small"
-          disabled={!explanation}
+          disabled={!content}
         >
           Copy
         </Button>
@@ -81,24 +101,31 @@ export default function AIExplanation({
         </>
       )}
 
-      {/* Explanation */}
+      {/* AI Generated Content */}
       {isLoading && (
         <div style={{ textAlign: 'center', padding: '40px 0' }}>
-          <BulbOutlined
-            style={{
+          {title.icon && React.cloneElement(title.icon as React.ReactElement, {
+            style: {
               fontSize: '48px',
-              color: '#1890ff',
               marginBottom: '16px',
               display: 'block',
-            }}
-          />
-          <Text type="secondary">Generating explanation...</Text>
+            }
+          })}
+          <Text type="secondary">
+            {mode === 'explain' && 'Generating explanation...'}
+            {mode === 'expand' && 'Expanding text...'}
+            {mode === 'summarize' && 'Summarizing text...'}
+          </Text>
         </div>
       )}
 
-      {!isLoading && explanation && (
+      {!isLoading && content && (
         <>
-          <Title level={5}>Explanation</Title>
+          <Title level={5}>
+            {mode === 'explain' && 'Explanation'}
+            {mode === 'expand' && 'Expanded Version'}
+            {mode === 'summarize' && 'Summary'}
+          </Title>
           <Paragraph
             style={{
               fontSize: '15px',
@@ -106,22 +133,22 @@ export default function AIExplanation({
               whiteSpace: 'pre-wrap',
             }}
           >
-            {explanation}
+            {content}
           </Paragraph>
 
           <Divider />
 
           <Text type="secondary" style={{ fontSize: '12px' }}>
-            💡 Tip: This explanation is AI-generated. Always verify important concepts
+            💡 Tip: This content is AI-generated. Always verify important concepts
             with course materials or instructors.
           </Text>
         </>
       )}
 
-      {!isLoading && !explanation && originalText && (
+      {!isLoading && !content && originalText && (
         <div style={{ textAlign: 'center', padding: '40px 0' }}>
           <Text type="secondary">
-            Click the "Explain" button to generate an explanation for the selected text.
+            Click the button to generate {mode === 'explain' ? 'an explanation' : mode === 'expand' ? 'an expansion' : 'a summary'} for the selected text.
           </Text>
         </div>
       )}
