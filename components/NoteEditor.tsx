@@ -3,17 +3,13 @@
 import React, { useState } from 'react';
 import { Input, Button, Space, Tooltip, Typography } from 'antd';
 import {
-  UnorderedListOutlined,
-  CodeOutlined,
-  BoldOutlined,
-  ItalicOutlined,
   BulbOutlined,
   ExpandOutlined,
   CompressOutlined,
 } from '@ant-design/icons';
 import { Note } from '../types';
+import MarkdownEditor from './MarkdownEditor';
 
-const { TextArea } = Input;
 const { Text } = Typography;
 
 interface NoteEditorProps {
@@ -38,39 +34,25 @@ export default function NoteEditor({
   onSummarizeRequest 
 }: NoteEditorProps) {
   const [selectedText, setSelectedText] = useState('');
-  const textAreaRef = React.useRef<any>(null);
 
   /**
-   * Handle text selection
+   * Handle text selection - this needs to work with the markdown editor
    */
-  const handleTextSelect = () => {
-    const selection = window.getSelection();
-    const selected = selection?.toString() || '';
-    setSelectedText(selected);
-  };
+  React.useEffect(() => {
+    const handleSelection = () => {
+      const selection = window.getSelection();
+      const selected = selection?.toString() || '';
+      setSelectedText(selected);
+    };
 
-  /**
-   * Insert markdown formatting at cursor
-   */
-  const insertFormatting = (prefix: string, suffix: string = '') => {
-    const textarea = textAreaRef.current?.resizableTextArea?.textArea;
-    if (!textarea) return;
+    document.addEventListener('mouseup', handleSelection);
+    document.addEventListener('keyup', handleSelection);
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = note.content.substring(start, end);
-    const before = note.content.substring(0, start);
-    const after = note.content.substring(end);
-
-    const newContent = `${before}${prefix}${selectedText}${suffix}${after}`;
-    onContentChange(newContent);
-
-    // Reset cursor position
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + prefix.length, end + prefix.length);
-    }, 0);
-  };
+    return () => {
+      document.removeEventListener('mouseup', handleSelection);
+      document.removeEventListener('keyup', handleSelection);
+    };
+  }, []);
 
   /**
    * Format last saved time
@@ -107,42 +89,8 @@ export default function NoteEditor({
         }}
       />
 
-      {/* Toolbar */}
+      {/* AI Tools Bar */}
       <Space style={{ marginBottom: '12px' }} wrap>
-        <Tooltip title="Bold (Ctrl+B)">
-          <Button
-            icon={<BoldOutlined />}
-            onClick={() => insertFormatting('**', '**')}
-            size="small"
-          />
-        </Tooltip>
-        
-        <Tooltip title="Italic (Ctrl+I)">
-          <Button
-            icon={<ItalicOutlined />}
-            onClick={() => insertFormatting('_', '_')}
-            size="small"
-          />
-        </Tooltip>
-
-        <Tooltip title="Code Block">
-          <Button
-            icon={<CodeOutlined />}
-            onClick={() => insertFormatting('```\n', '\n```')}
-            size="small"
-          />
-        </Tooltip>
-
-        <Tooltip title="Bullet List">
-          <Button
-            icon={<UnorderedListOutlined />}
-            onClick={() => insertFormatting('- ')}
-            size="small"
-          />
-        </Tooltip>
-
-        <div style={{ borderLeft: '1px solid #424242', height: '24px', margin: '0 8px' }} />
-
         <Tooltip title="Explain Selected Text (Ctrl+E)">
           <Button
             icon={<BulbOutlined />}
@@ -160,7 +108,6 @@ export default function NoteEditor({
             icon={<ExpandOutlined />}
             onClick={() => selectedText && onExpandRequest(selectedText)}
             disabled={!selectedText}
-            type={selectedText ? 'default' : 'default'}
             size="small"
           >
             Expand
@@ -172,7 +119,6 @@ export default function NoteEditor({
             icon={<CompressOutlined />}
             onClick={() => selectedText && onSummarizeRequest(selectedText)}
             disabled={!selectedText}
-            type={selectedText ? 'default' : 'default'}
             size="small"
           >
             Summarize
@@ -192,31 +138,27 @@ export default function NoteEditor({
         </Space>
       </Space>
 
-      {/* Text Editor */}
-      <TextArea
-        ref={textAreaRef}
-        value={note.content}
-        onChange={(e) => onContentChange(e.target.value)}
-        onSelect={handleTextSelect}
-        placeholder="Start typing your notes here... 
+      {/* Markdown Editor */}
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        <MarkdownEditor
+          value={note.content}
+          onChange={onContentChange}
+          placeholder="Start typing your notes here... 
 
-You can:
-- Use markdown formatting (bold, italic, code blocks)
-- Select text and click 'Explain' to get AI explanations
-- Select text and click 'Expand' to get more detailed explanations
-- Select text and click 'Summarize' to get concise summaries
-- Generate flashcards from your notes
+You can use markdown:
+# Heading 1
+## Heading 2
+**bold** and _italic_
+- bullet lists
+1. numbered lists
+`inline code`
+```javascript
+code blocks
+```
 
-Your notes are automatically saved every 3 seconds."
-        style={{
-          flex: 1,
-          fontSize: '16px',
-          lineHeight: '1.6',
-          fontFamily: 'monospace',
-          resize: 'none',
-        }}
-        variant="borderless"
-      />
+Select text and use AI tools to explain, expand, or summarize!"
+        />
+      </div>
     </div>
   );
 }
