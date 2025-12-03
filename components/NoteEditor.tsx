@@ -11,23 +11,32 @@ import {
   ExpandOutlined,
   CompressOutlined,
 } from '@ant-design/icons';
-import { useNote } from '../hooks/useNote';
+import { Note } from '../types';
 
 const { TextArea } = Input;
 const { Text } = Typography;
 
 interface NoteEditorProps {
+  note: Note;
+  onContentChange: (content: string) => void;
+  onTitleChange: (title: string) => void;
+  isSaving: boolean;
+  lastSaved: Date | null;
   onExplainRequest: (selectedText: string) => void;
   onExpandRequest: (selectedText: string) => void;
   onSummarizeRequest: (selectedText: string) => void;
 }
 
 export default function NoteEditor({ 
+  note,
+  onContentChange,
+  onTitleChange,
+  isSaving,
+  lastSaved,
   onExplainRequest, 
   onExpandRequest,
   onSummarizeRequest 
 }: NoteEditorProps) {
-  const { note, updateContent, updateTitle, isSaving, lastSaved } = useNote();
   const [selectedText, setSelectedText] = useState('');
   const textAreaRef = React.useRef<any>(null);
 
@@ -54,7 +63,7 @@ export default function NoteEditor({
     const after = note.content.substring(end);
 
     const newContent = `${before}${prefix}${selectedText}${suffix}${after}`;
-    updateContent(newContent);
+    onContentChange(newContent);
 
     // Reset cursor position
     setTimeout(() => {
@@ -89,7 +98,7 @@ export default function NoteEditor({
         size="large"
         placeholder="Untitled Note"
         value={note.title}
-        onChange={(e) => updateTitle(e.target.value)}
+        onChange={(e) => onTitleChange(e.target.value)}
         variant="borderless"
         style={{
           fontSize: '24px',
@@ -187,7 +196,7 @@ export default function NoteEditor({
       <TextArea
         ref={textAreaRef}
         value={note.content}
-        onChange={(e) => updateContent(e.target.value)}
+        onChange={(e) => onContentChange(e.target.value)}
         onSelect={handleTextSelect}
         placeholder="Start typing your notes here... 
 

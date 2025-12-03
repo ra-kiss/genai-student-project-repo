@@ -4,7 +4,9 @@ import React, { useState } from 'react';
 import { Layout, Typography, ConfigProvider, theme, App } from 'antd';
 import NoteEditor from '../components/NoteEditor';
 import AIExplanation from '../components/AIExplanation';
+import NotesDropdown from '../components/NotesDropdown';
 import { useOpenAI } from '../hooks/useOpenAI';
+import { useNote } from '../hooks/useNote';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -13,6 +15,18 @@ function HomeContent() {
   const [selectedText, setSelectedText] = useState('');
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [drawerMode, setDrawerMode] = useState<'explain' | 'expand' | 'summarize'>('explain');
+  
+  const { 
+    note: currentNote,
+    allNotes,
+    updateContent,
+    updateTitle,
+    createNewNote,
+    switchNote,
+    deleteNote,
+    isSaving,
+    lastSaved,
+  } = useNote();
   
   const { 
     isExplaining, 
@@ -86,6 +100,20 @@ function HomeContent() {
 
   const { content, isLoading } = getCurrentContent();
 
+  if (!currentNote) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        background: '#000'
+      }}>
+        <Typography.Text>Loading...</Typography.Text>
+      </div>
+    );
+  }
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
       {/* Header */}
@@ -94,11 +122,20 @@ function HomeContent() {
         padding: '0 24px',
         borderBottom: '1px solid #303030',
         display: 'flex',
-        alignItems: 'center'
+        alignItems: 'center',
+        justifyContent: 'space-between',
       }}>
         <Title level={3} style={{ margin: 0, color: '#fff' }}>
           AI-Powered Notes
         </Title>
+        
+        <NotesDropdown
+          currentNote={currentNote}
+          allNotes={allNotes}
+          onSelectNote={switchNote}
+          onCreateNote={createNewNote}
+          onDeleteNote={deleteNote}
+        />
       </Header>
 
       {/* Main Content */}
@@ -110,9 +147,15 @@ function HomeContent() {
           height: 'calc(100vh - 120px)',
         }}>
           <NoteEditor 
+            note={currentNote}
+            onContentChange={updateContent}
+            onTitleChange={updateTitle}
+            isSaving={isSaving}
+            lastSaved={lastSaved}
             onExplainRequest={handleExplainRequest}
             onExpandRequest={handleExpandRequest}
             onSummarizeRequest={handleSummarizeRequest}
+            key={currentNote.id}
           />
         </div>
       </Content>
