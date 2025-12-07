@@ -2,6 +2,16 @@ import { Flashcard } from '../types';
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
+export interface RAGContext {
+  distance?: number;
+  chunk?: string;
+  text?: string;
+  source?: string;
+  topic?: string;
+  category?: string;
+  [key: string]: any;
+}
+
 /**
  * Makes a request to OpenAI's Chat Completions API
  */
@@ -32,6 +42,24 @@ async function makeOpenAIRequest(messages: Array<{ role: string; content: string
 
   const data = await response.json();
   return data.choices[0].message.content;
+}
+
+/**
+ * Format RAG context for inclusion in prompts
+ */
+function formatRAGContext(ragResults: RAGContext[]): string {
+  if (!ragResults || ragResults.length === 0) return '';
+  
+  const formattedResults = ragResults
+    .map((result, i) => {
+      const text = (result as any).Text || result.chunk || result.text || '';
+      const similarity = result.distance ? `(${Math.max(0, ((1 - result.distance / 2) * 100)).toFixed(1)}% match)` : '';
+      const type = (result as any).Type ? `\n[Type: ${(result as any).Type}]` : '';
+      return `${i + 1}. ${text}${similarity}${type}`;
+    })
+    .join('\n\n');
+
+  return `\n\n---\nRELATED KNOWLEDGE BASE RESULTS:\n${formattedResults}\n---`;
 }
 
 /**
@@ -136,6 +164,124 @@ Create 5-10 flashcards focusing on key concepts, definitions, and important deta
     const flashcards = JSON.parse(response);
     
     // Add IDs to each flashcard
+    return flashcards.map((card: { question: string; answer: string }, index: number) => ({
+      id: `flashcard-${Date.now()}-${index}`,
+      question: card.question,
+      answer: card.answer,
+    }));
+  } catch (error) {
+    console.error('Failed to parse flashcards:', error);
+    throw new Error('Failed to generate flashcards. Please try again.');
+  }
+}
+
+/**
+ * Enhanced: Explain text with RAG context from knowledge base
+ * Provides more accurate explanations based on relevant knowledge
+ */
+export async function explainTextWithRAG(text: string, ragContext?: RAGContext[]): Promise<string> {
+  if (!text.trim()) {
+    throw new Error('No text provided to explain');
+  }
+
+  const ragInfo = formatRAGContext(ragContext || []);
+
+  const messages = [
+    {
+      role: 'system',
+      content: `You are a helpful computer science tutor. Explain concepts clearly and concisely, as if teaching a university student. Use examples when helpful.${ragInfo ? '\n\nYou have access to relevant knowledge base results below to provide more accurate explanations.' : ''}`,
+    },
+    {
+      role: 'user',
+      content: `Please explain the following text in simpler terms:\n\n${text}${ragInfo}`,
+    },
+  ];
+
+  return await makeOpenAIRequest(messages);
+}
+
+/**
+ * Enhanced: Expand text with RAG context from knowledge base
+ * Provides more detailed expansions based on relevant materials
+ */
+export async function expandTextWithRAG(text: string, ragContext?: RAGContext[]): Promise<string> {
+  if (!text.trim()) {
+    throw new Error('No text provided to expand');
+  }
+
+  const ragInfo = formatRAGContext(ragContext || []);
+
+  const messages = [
+    {
+      role: 'system',
+      content: `You are a helpful computer science tutor. Expand on the given text by adding more detail, context, examples, and explanations. Make it comprehensive and educational for a university student.${ragInfo ? '\n\nUse the provided knowledge base results to add relevant details and context.' : ''}`,
+    },
+    {
+      role: 'user',
+      content: `Please expand on the following text with more detail, examples, and context:\n\n${text}${ragInfo}`,
+    },
+  ];
+
+  return await makeOpenAIRequest(messages);
+}
+
+/**
+ * Enhanced: Summarize text with RAG context from knowledge base
+ * Provides more focused summaries based on relevant materials
+ */
+export async function summarizeTextWithRAG(text: string, ragContext?: RAGContext[]): Promise<string> {
+  if (!text.trim()) {
+    throw new Error('No text provided to summarize');
+  }
+
+  const ragInfo = formatRAGContext(ragContext || []);
+
+  const messages = [
+    {
+      role: 'system',
+      content: `You are a helpful study assistant. Summarize the given text into clear, concise key points. Focus on the most important information that a computer science student should remember.${ragInfo ? '\n\nConsider the provided knowledge base results to identify the most important points.' : ''}`,
+    },
+    {
+      role: 'user',
+      content: `Please summarize the following text into key points:\n\n${text}${ragInfo}`,
+    },
+  ];
+
+  return await makeOpenAIRequest(messages);
+}
+
+/**
+ * Enhanced: Generate flashcards with RAG context from knowledge base
+ * Creates more comprehensive flashcards based on relevant materials
+ */
+export async function generateFlashcardsWithRAG(noteContent: string, ragContext?: RAGContext[]): Promise<Flashcard[]> {
+  if (!noteContent.trim()) {
+    throw new Error('No content provided to generate flashcards');
+  }
+
+  const ragInfo = formatRAGContext(ragContext || []);
+
+  const messages = [
+    {
+      role: 'system',
+      content: `You are a helpful study assistant. Generate flashcards from the provided notes. 
+Return ONLY a valid JSON array of flashcards with this exact format:
+[
+  {"question": "What is...", "answer": "..."},
+  {"question": "How does...", "answer": "..."}
+]
+Create 5-10 flashcards focusing on key concepts, definitions, and important details.${ragInfo ? '\n\nConsider the provided knowledge base results to create more comprehensive and accurate flashcards.' : ''}`,
+    },
+    {
+      role: 'user',
+      content: `Generate flashcards from these notes:\n\n${noteContent}${ragInfo}`,
+    },
+  ];
+
+  const response = await makeOpenAIRequest(messages);
+
+  try {
+    const flashcards = JSON.parse(response);
     return flashcards.map((card: { question: string; answer: string }, index: number) => ({
       id: `flashcard-${Date.now()}-${index}`,
       question: card.question,

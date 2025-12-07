@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { explainText, expandText, summarizeText, generateFlashcards } from '../lib/openai';
+import { explainText, expandText, summarizeText, generateFlashcards, explainTextWithRAG, expandTextWithRAG, summarizeTextWithRAG, generateFlashcardsWithRAG, RAGContext } from '../lib/openai';
 import { Flashcard } from '../types';
 import { App } from 'antd';
 
@@ -14,10 +14,10 @@ interface UseOpenAIReturn {
   expansion: string | null;
   summary: string | null;
   flashcards: Flashcard[];
-  explain: (text: string) => Promise<void>;
-  expand: (text: string) => Promise<void>;
-  summarize: (text: string) => Promise<void>;
-  generateCards: (content: string) => Promise<void>;
+  explain: (text: string, ragContext?: RAGContext[]) => Promise<void>;
+  expand: (text: string, ragContext?: RAGContext[]) => Promise<void>;
+  summarize: (text: string, ragContext?: RAGContext[]) => Promise<void>;
+  generateCards: (content: string, ragContext?: RAGContext[]) => Promise<void>;
   clearExplanation: () => void;
   clearExpansion: () => void;
   clearSummary: () => void;
@@ -41,7 +41,7 @@ export function useOpenAI(): UseOpenAIReturn {
   /**
    * Explain selected text using OpenAI
    */
-  const explain = useCallback(async (text: string) => {
+  const explain = useCallback(async (text: string, ragContext?: RAGContext[]) => {
     if (!text.trim()) {
       message.warning('Please select some text to explain');
       return;
@@ -51,7 +51,7 @@ export function useOpenAI(): UseOpenAIReturn {
     const loadingMessage = message.loading('Generating explanation...', 0);
 
     try {
-      const result = await explainText(text);
+      const result = ragContext ? await explainTextWithRAG(text, ragContext) : await explainText(text);
       setExplanation(result);
       loadingMessage();
       message.success('Explanation generated!');
@@ -72,7 +72,7 @@ export function useOpenAI(): UseOpenAIReturn {
   /**
    * Expand selected text using OpenAI
    */
-  const expand = useCallback(async (text: string) => {
+  const expand = useCallback(async (text: string, ragContext?: RAGContext[]) => {
     if (!text.trim()) {
       message.warning('Please select some text to expand');
       return;
@@ -82,7 +82,7 @@ export function useOpenAI(): UseOpenAIReturn {
     const loadingMessage = message.loading('Expanding text...', 0);
 
     try {
-      const result = await expandText(text);
+      const result = ragContext ? await expandTextWithRAG(text, ragContext) : await expandText(text);
       setExpansion(result);
       loadingMessage();
       message.success('Text expanded!');
@@ -103,7 +103,7 @@ export function useOpenAI(): UseOpenAIReturn {
   /**
    * Summarize selected text using OpenAI
    */
-  const summarize = useCallback(async (text: string) => {
+  const summarize = useCallback(async (text: string, ragContext?: RAGContext[]) => {
     if (!text.trim()) {
       message.warning('Please select some text to summarize');
       return;
@@ -113,7 +113,7 @@ export function useOpenAI(): UseOpenAIReturn {
     const loadingMessage = message.loading('Summarizing text...', 0);
 
     try {
-      const result = await summarizeText(text);
+      const result = ragContext ? await summarizeTextWithRAG(text, ragContext) : await summarizeText(text);
       setSummary(result);
       loadingMessage();
       message.success('Summary generated!');
@@ -134,7 +134,7 @@ export function useOpenAI(): UseOpenAIReturn {
   /**
    * Generate flashcards from note content using OpenAI
    */
-  const generateCards = useCallback(async (content: string) => {
+  const generateCards = useCallback(async (content: string, ragContext?: RAGContext[]) => {
     if (!content.trim()) {
       message.warning('Please write some content before generating flashcards');
       return;
@@ -144,7 +144,7 @@ export function useOpenAI(): UseOpenAIReturn {
     const loadingMessage = message.loading('Generating flashcards...', 0);
 
     try {
-      const result = await generateFlashcards(content);
+      const result = ragContext ? await generateFlashcardsWithRAG(content, ragContext) : await generateFlashcards(content);
       setFlashcards(result);
       loadingMessage();
       message.success(`Generated ${result.length} flashcards!`);

@@ -7,6 +7,7 @@ import {
   ExpandOutlined,
   CompressOutlined,
   SaveOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import { Note } from '../types';
 import MarkdownEditor from './MarkdownEditor';
@@ -23,6 +24,9 @@ interface NoteEditorProps {
   onExplainRequest: (selectedText: string) => void;
   onExpandRequest: (selectedText: string) => void;
   onSummarizeRequest: (selectedText: string) => void;
+  onExplainWithKBRequest?: (selectedText: string) => void;
+  onExpandWithKBRequest?: (selectedText: string) => void;
+  onSummarizeWithKBRequest?: (selectedText: string) => void;
 }
 
 export default function NoteEditor({ 
@@ -34,7 +38,10 @@ export default function NoteEditor({
   saveNote,
   onExplainRequest, 
   onExpandRequest,
-  onSummarizeRequest 
+  onSummarizeRequest,
+  onExplainWithKBRequest,
+  onExpandWithKBRequest,
+  onSummarizeWithKBRequest,
 }: NoteEditorProps) {
   const [selectedText, setSelectedText] = useState('');
 
@@ -127,6 +134,49 @@ export default function NoteEditor({
             Summarize
           </Button>
         </Tooltip>
+
+        {/* RAG-Enhanced Options */}
+        {onExplainWithKBRequest && (
+          <Tooltip title="Explain with Knowledge Base Context">
+            <Button
+              icon={<BulbOutlined />}
+              onClick={() => selectedText && onExplainWithKBRequest(selectedText)}
+              disabled={!selectedText}
+              size="small"
+              style={{ color: '#722ed1' }}
+            >
+              Explain + KB
+            </Button>
+          </Tooltip>
+        )}
+
+        {onExpandWithKBRequest && (
+          <Tooltip title="Expand with Knowledge Base Context">
+            <Button
+              icon={<ExpandOutlined />}
+              onClick={() => selectedText && onExpandWithKBRequest(selectedText)}
+              disabled={!selectedText}
+              size="small"
+              style={{ color: '#722ed1' }}
+            >
+              Expand + KB
+            </Button>
+          </Tooltip>
+        )}
+
+        {onSummarizeWithKBRequest && (
+          <Tooltip title="Summarize with Knowledge Base Context">
+            <Button
+              icon={<CompressOutlined />}
+              onClick={() => selectedText && onSummarizeWithKBRequest(selectedText)}
+              disabled={!selectedText}
+              size="small"
+              style={{ color: '#722ed1' }}
+            >
+              Summarize + KB
+            </Button>
+          </Tooltip>
+        )}
 
         <div style={{ flex: 1 }} />
 

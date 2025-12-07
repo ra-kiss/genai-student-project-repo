@@ -2,16 +2,18 @@
 
 import React, { useState } from 'react';
 import { Layout, Typography, ConfigProvider, theme, App, Button, Badge } from 'antd';
-import { CreditCardOutlined } from '@ant-design/icons';
+import { CreditCardOutlined, BookOutlined } from '@ant-design/icons';
 import NoteEditor from '../components/NoteEditor';
 import AIExplanation from '../components/AIExplanation';
 import NotesDropdown from '../components/NotesDropdown';
 import FlashcardModal from '../components/FlashcardModal';
 import ExportDropdown from '../components/ExportDropdown';
 import ImportDropdown from '../components/ImportDropdown';
+import RAGSearch from '../components/RAGSearch';
 import { useOpenAI } from '../hooks/useOpenAI';
 import { useNote } from '../hooks/useNote';
 import { useFlashcards } from '../hooks/useFlashcards';
+import { useRAG } from '../hooks/useRAG';
 import { Note, Flashcard } from '../types';
 import { saveNote as saveNoteToStorage } from '../lib/storage';
 
@@ -23,6 +25,9 @@ function HomeContent() {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [drawerMode, setDrawerMode] = useState<'explain' | 'expand' | 'summarize'>('explain');
   const [flashcardModalVisible, setFlashcardModalVisible] = useState(false);
+  const [ragSearchVisible, setRagSearchVisible] = useState(false);
+  
+  const { queryRAG } = useRAG();
   
   const { 
     note: currentNote,
@@ -93,6 +98,60 @@ function HomeContent() {
     setDrawerMode('summarize');
     setDrawerVisible(true);
     await summarize(text);
+  };
+
+  /**
+   * Handle explain request with RAG context
+   */
+  const handleExplainWithKBRequest = async (text: string) => {
+    setSelectedText(text);
+    setDrawerMode('explain');
+    setDrawerVisible(true);
+    
+    try {
+      const ragResults = await queryRAG(text, 5, true); // Use input types for OpenAI context
+      await explain(text, ragResults);
+    } catch (error) {
+      console.error('RAG search error:', error);
+      // Fall back to regular explain
+      await explain(text);
+    }
+  };
+
+  /**
+   * Handle expand request with RAG context
+   */
+  const handleExpandWithKBRequest = async (text: string) => {
+    setSelectedText(text);
+    setDrawerMode('expand');
+    setDrawerVisible(true);
+    
+    try {
+      const ragResults = await queryRAG(text, 5, true); // Use input types for OpenAI context
+      await expand(text, ragResults);
+    } catch (error) {
+      console.error('RAG search error:', error);
+      // Fall back to regular expand
+      await expand(text);
+    }
+  };
+
+  /**
+   * Handle summarize request with RAG context
+   */
+  const handleSummarizeWithKBRequest = async (text: string) => {
+    setSelectedText(text);
+    setDrawerMode('summarize');
+    setDrawerVisible(true);
+    
+    try {
+      const ragResults = await queryRAG(text, 5, true); // Use input types for OpenAI context
+      await summarize(text, ragResults);
+    } catch (error) {
+      console.error('RAG search error:', error);
+      // Fall back to regular summarize
+      await summarize(text);
+    }
   };
 
   /**
@@ -252,6 +311,13 @@ function HomeContent() {
         
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <Button
+              icon={<BookOutlined />}
+              onClick={() => setRagSearchVisible(true)}
+            >
+              Search Knowledge Base
+            </Button>
+            
+            <Button
               type="primary"
               icon={<CreditCardOutlined />}
               onClick={handleOpenFlashcards}
@@ -288,6 +354,9 @@ function HomeContent() {
             onExplainRequest={handleExplainRequest}
             onExpandRequest={handleExpandRequest}
             onSummarizeRequest={handleSummarizeRequest}
+            onExplainWithKBRequest={handleExplainWithKBRequest}
+            onExpandWithKBRequest={handleExpandWithKBRequest}
+            onSummarizeWithKBRequest={handleSummarizeWithKBRequest}
             key={currentNote.id}
           />
         </div>
@@ -311,6 +380,15 @@ function HomeContent() {
         onRegenerate={handleRegenerateFlashcards}
         onUpdateFlashcard={updateFlashcard}
         onDeleteFlashcard={deleteFlashcard}
+      />
+
+      {/* RAG Search Drawer */}
+      <RAGSearch
+        visible={ragSearchVisible}
+        onClose={() => setRagSearchVisible(false)}
+        onInsertToNote={(text) => {
+          updateContent(currentNote.content + '\n\n' + text);
+        }}
       />
     </Layout>
   );
