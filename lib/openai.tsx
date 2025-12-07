@@ -53,13 +53,11 @@ function formatRAGContext(ragResults: RAGContext[]): string {
   const formattedResults = ragResults
     .map((result, i) => {
       const text = (result as any).Text || result.chunk || result.text || '';
-      const similarity = result.distance ? `(${Math.max(0, ((1 - result.distance / 2) * 100)).toFixed(1)}% match)` : '';
-      const type = (result as any).Type ? `\n[Type: ${(result as any).Type}]` : '';
-      return `${i + 1}. ${text}${similarity}${type}`;
+      return `${i + 1}. ${text}`;
     })
-    .join('\n\n');
+    .join('\n');
 
-  return `\n\n---\nRELATED KNOWLEDGE BASE RESULTS:\n${formattedResults}\n---`;
+  return `\n\n---\nRELATED CONTEXT FROM KNOWLEDGE BASE:\n${formattedResults}\n---`;
 }
 
 /**
@@ -189,11 +187,11 @@ export async function explainTextWithRAG(text: string, ragContext?: RAGContext[]
   const messages = [
     {
       role: 'system',
-      content: `You are a helpful computer science tutor. Explain concepts clearly and concisely, as if teaching a university student. Use examples when helpful.${ragInfo ? '\n\nYou have access to relevant knowledge base results below to provide more accurate explanations.' : ''}`,
+      content: `You are a helpful computer science tutor. Explain concepts clearly and concisely, as if teaching a university student. Use examples when helpful.${ragInfo ? '\n\nIMPORTANT: Below are related input examples from the knowledge base. Use these inputs to provide more comprehensive and accurate explanations with concrete examples.' : ''}`,
     },
     {
       role: 'user',
-      content: `Please explain the following text in simpler terms:\n\n${text}${ragInfo}`,
+      content: `Please explain the following text in simpler terms, using the related examples provided:\n\n${text}${ragInfo}`,
     },
   ];
 
@@ -214,11 +212,11 @@ export async function expandTextWithRAG(text: string, ragContext?: RAGContext[])
   const messages = [
     {
       role: 'system',
-      content: `You are a helpful computer science tutor. Expand on the given text by adding more detail, context, examples, and explanations. Make it comprehensive and educational for a university student.${ragInfo ? '\n\nUse the provided knowledge base results to add relevant details and context.' : ''}`,
+      content: `You are a helpful computer science tutor. Expand on the given text by adding more detail, context, examples, and explanations. Make it comprehensive and educational for a university student.${ragInfo ? '\n\nIMPORTANT: Below are related input examples from the knowledge base. Use these inputs as foundation to expand and elaborate with concrete examples, use cases, and detailed explanations.' : ''}`,
     },
     {
       role: 'user',
-      content: `Please expand on the following text with more detail, examples, and context:\n\n${text}${ragInfo}`,
+      content: `Please expand on the following text with more detail, examples, and context using the related inputs provided:\n\n${text}${ragInfo}`,
     },
   ];
 
@@ -239,11 +237,11 @@ export async function summarizeTextWithRAG(text: string, ragContext?: RAGContext
   const messages = [
     {
       role: 'system',
-      content: `You are a helpful study assistant. Summarize the given text into clear, concise key points. Focus on the most important information that a computer science student should remember.${ragInfo ? '\n\nConsider the provided knowledge base results to identify the most important points.' : ''}`,
+      content: `You are a helpful study assistant. Summarize the given text into clear, concise key points. Focus on the most important information that a computer science student should remember.${ragInfo ? '\n\nIMPORTANT: Below are related input examples from the knowledge base. Consider these examples when identifying the most important points to summarize.' : ''}`,
     },
     {
       role: 'user',
-      content: `Please summarize the following text into key points:\n\n${text}${ragInfo}`,
+      content: `Please summarize the following text into key points, considering the related examples provided:\n\n${text}${ragInfo}`,
     },
   ];
 

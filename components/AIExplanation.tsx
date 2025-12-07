@@ -18,6 +18,7 @@ interface AIExplanationProps {
   isLoading: boolean;
   onClose: () => void;
   mode: 'explain' | 'expand' | 'summarize';
+  ragContext?: Array<{ Text?: string; text?: string; chunk?: string; Type?: string; [key: string]: any }>;
 }
 
 export default function AIExplanation({
@@ -27,6 +28,7 @@ export default function AIExplanation({
   isLoading,
   onClose,
   mode,
+  ragContext,
 }: AIExplanationProps) {
   const { message } = App.useApp();
 
@@ -104,7 +106,7 @@ export default function AIExplanation({
       {/* AI Generated Content */}
       {isLoading && (
         <div style={{ textAlign: 'center', padding: '40px 0' }}>
-          {title.icon && React.cloneElement(title.icon as React.ReactElement, {
+          {title.icon && React.cloneElement(title.icon as React.ReactElement<any>, {
             style: {
               fontSize: '48px',
               marginBottom: '16px',
@@ -135,6 +137,31 @@ export default function AIExplanation({
           >
             {content}
           </Paragraph>
+
+          {/* Knowledge Base Context Used */}
+          {ragContext && ragContext.length > 0 && (
+            <>
+              <Divider />
+              <Card
+                size="small"
+                title={<Text strong style={{ color: '#722ed1' }}>📚 Knowledge Base Context Used</Text>}
+                style={{ marginBottom: '16px', backgroundColor: '#1f1f1f', borderColor: '#722ed1' }}
+              >
+                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                  {ragContext.map((item, index) => (
+                    <div key={index} style={{ marginBottom: '12px', paddingBottom: '12px', borderBottom: index < ragContext.length - 1 ? '1px solid #303030' : 'none' }}>
+                      <Text style={{ fontSize: '13px', color: '#d4d4d4' }}>
+                        {index + 1}. {item.Text || item.text || item.chunk || ''}
+                      </Text>
+                    </div>
+                  ))}
+                </div>
+                <Text type="secondary" style={{ fontSize: '11px', display: 'block', marginTop: '8px' }}>
+                  {ragContext.length} input example{ragContext.length !== 1 ? 's' : ''} from knowledge base
+                </Text>
+              </Card>
+            </>
+          )}
 
           <Divider />
 

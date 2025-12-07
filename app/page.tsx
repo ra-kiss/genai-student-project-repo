@@ -26,6 +26,7 @@ function HomeContent() {
   const [drawerMode, setDrawerMode] = useState<'explain' | 'expand' | 'summarize'>('explain');
   const [flashcardModalVisible, setFlashcardModalVisible] = useState(false);
   const [ragSearchVisible, setRagSearchVisible] = useState(false);
+  const [currentRagContext, setCurrentRagContext] = useState<any[]>([]);
   
   const { queryRAG } = useRAG();
   
@@ -77,6 +78,7 @@ function HomeContent() {
     setSelectedText(text);
     setDrawerMode('explain');
     setDrawerVisible(true);
+    setCurrentRagContext([]);
     await explain(text);
   };
 
@@ -87,6 +89,7 @@ function HomeContent() {
     setSelectedText(text);
     setDrawerMode('expand');
     setDrawerVisible(true);
+    setCurrentRagContext([]); // Clear KB context for regular expand
     await expand(text);
   };
 
@@ -97,6 +100,7 @@ function HomeContent() {
     setSelectedText(text);
     setDrawerMode('summarize');
     setDrawerVisible(true);
+    setCurrentRagContext([]); // Clear KB context for regular summarize
     await summarize(text);
   };
 
@@ -110,9 +114,11 @@ function HomeContent() {
     
     try {
       const ragResults = await queryRAG(text, 5, true); // Use input types for OpenAI context
+      setCurrentRagContext(ragResults);
       await explain(text, ragResults);
     } catch (error) {
       console.error('RAG search error:', error);
+      setCurrentRagContext([]);
       // Fall back to regular explain
       await explain(text);
     }
@@ -128,9 +134,11 @@ function HomeContent() {
     
     try {
       const ragResults = await queryRAG(text, 5, true); // Use input types for OpenAI context
+      setCurrentRagContext(ragResults);
       await expand(text, ragResults);
     } catch (error) {
       console.error('RAG search error:', error);
+      setCurrentRagContext([]);
       // Fall back to regular expand
       await expand(text);
     }
@@ -146,9 +154,11 @@ function HomeContent() {
     
     try {
       const ragResults = await queryRAG(text, 5, true); // Use input types for OpenAI context
+      setCurrentRagContext(ragResults);
       await summarize(text, ragResults);
     } catch (error) {
       console.error('RAG search error:', error);
+      setCurrentRagContext([]);
       // Fall back to regular summarize
       await summarize(text);
     }
@@ -163,6 +173,7 @@ function HomeContent() {
     clearExpansion();
     clearSummary();
     setSelectedText('');
+    setCurrentRagContext([]);
   };
 
   /**
@@ -370,6 +381,7 @@ function HomeContent() {
         isLoading={isLoading}
         onClose={handleCloseDrawer}
         mode={drawerMode}
+        ragContext={currentRagContext}
       />
 
       {/* Flashcard Modal */}
