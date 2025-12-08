@@ -24,9 +24,9 @@ interface NoteEditorProps {
   onExplainRequest: (selectedText: string) => void;
   onExpandRequest: (selectedText: string) => void;
   onSummarizeRequest: (selectedText: string) => void;
-  onExplainWithKBRequest?: (selectedText: string) => void;
-  onExpandWithKBRequest?: (selectedText: string) => void;
-  onSummarizeWithKBRequest?: (selectedText: string) => void;
+  onExplainWithRAGRequest?: (selectedText: string) => void;
+  onExpandWithRAGRequest?: (selectedText: string) => void;
+  onSummarizeWithRAGRequest?: (selectedText: string) => void;
 }
 
 export default function NoteEditor({ 
@@ -36,12 +36,12 @@ export default function NoteEditor({
   isSaving,
   lastSaved,
   saveNote,
-  onExplainRequest, 
+  onExplainRequest,
   onExpandRequest,
   onSummarizeRequest,
-  onExplainWithKBRequest,
-  onExpandWithKBRequest,
-  onSummarizeWithKBRequest,
+  onExplainWithRAGRequest,
+  onExpandWithRAGRequest,
+  onSummarizeWithRAGRequest,
 }: NoteEditorProps) {
   const [selectedText, setSelectedText] = useState('');
 
@@ -136,44 +136,44 @@ export default function NoteEditor({
         </Tooltip>
 
         {/* RAG-Enhanced Options */}
-        {onExplainWithKBRequest && (
-          <Tooltip title="Explain with Knowledge Base Context">
+        {onExplainWithRAGRequest && (
+          <Tooltip title="Explain with RAG Context">
             <Button
               icon={<BulbOutlined />}
-              onClick={() => selectedText && onExplainWithKBRequest(selectedText)}
+              onClick={() => selectedText && onExplainWithRAGRequest(selectedText)}
               disabled={!selectedText}
               size="small"
-              style={{ color: '#722ed1' }}
+              style={{ color: selectedText ? '#722ed1' : '#722ed166' }}
             >
-              Explain + KB
+              Explain + RAG
             </Button>
           </Tooltip>
         )}
 
-        {onExpandWithKBRequest && (
-          <Tooltip title="Expand with Knowledge Base Context">
+        {onExpandWithRAGRequest && (
+          <Tooltip title="Expand with RAG Context">
             <Button
               icon={<ExpandOutlined />}
-              onClick={() => selectedText && onExpandWithKBRequest(selectedText)}
+              onClick={() => selectedText && onExpandWithRAGRequest(selectedText)}
               disabled={!selectedText}
               size="small"
-              style={{ color: '#722ed1' }}
+              style={{ color: selectedText ? '#722ed1' : '#722ed166' }}
             >
-              Expand + KB
+              Expand + RAG
             </Button>
           </Tooltip>
         )}
 
-        {onSummarizeWithKBRequest && (
-          <Tooltip title="Summarize with Knowledge Base Context">
+        {onSummarizeWithRAGRequest && (
+          <Tooltip title="Summarize with RAG Context">
             <Button
               icon={<CompressOutlined />}
-              onClick={() => selectedText && onSummarizeWithKBRequest(selectedText)}
+              onClick={() => selectedText && onSummarizeWithRAGRequest(selectedText)}
               disabled={!selectedText}
               size="small"
-              style={{ color: '#722ed1' }}
+              style={{ color: selectedText ? '#722ed1' : '#722ed166' }}
             >
-              Summarize + KB
+              Summarize + RAG
             </Button>
           </Tooltip>
         )}

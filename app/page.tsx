@@ -89,7 +89,7 @@ function HomeContent() {
     setSelectedText(text);
     setDrawerMode('expand');
     setDrawerVisible(true);
-    setCurrentRagContext([]); // Clear KB context for regular expand
+    setCurrentRagContext([]); // Clear RAG context for regular expand
     await expand(text);
   };
 
@@ -100,14 +100,14 @@ function HomeContent() {
     setSelectedText(text);
     setDrawerMode('summarize');
     setDrawerVisible(true);
-    setCurrentRagContext([]); // Clear KB context for regular summarize
+    setCurrentRagContext([]); // Clear RAG context for regular summarize
     await summarize(text);
   };
 
   /**
    * Handle explain request with RAG context
    */
-  const handleExplainWithKBRequest = async (text: string) => {
+  const handleExplainWithRAGRequest = async (text: string) => {
     setSelectedText(text);
     setDrawerMode('explain');
     setDrawerVisible(true);
@@ -127,7 +127,7 @@ function HomeContent() {
   /**
    * Handle expand request with RAG context
    */
-  const handleExpandWithKBRequest = async (text: string) => {
+  const handleExpandWithRAGRequest = async (text: string) => {
     setSelectedText(text);
     setDrawerMode('expand');
     setDrawerVisible(true);
@@ -147,7 +147,7 @@ function HomeContent() {
   /**
    * Handle summarize request with RAG context
    */
-  const handleSummarizeWithKBRequest = async (text: string) => {
+  const handleSummarizeWithRAGRequest = async (text: string) => {
     setSelectedText(text);
     setDrawerMode('summarize');
     setDrawerVisible(true);
@@ -324,6 +324,18 @@ function HomeContent() {
             <Button
               icon={<BookOutlined />}
               onClick={() => setRagSearchVisible(true)}
+              className="rag-search-button"
+              style={{
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#722ed1';
+                e.currentTarget.style.borderColor = '#722ed1';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '';
+                e.currentTarget.style.borderColor = '';
+              }}
             >
               Search Knowledge Base
             </Button>
@@ -365,9 +377,9 @@ function HomeContent() {
             onExplainRequest={handleExplainRequest}
             onExpandRequest={handleExpandRequest}
             onSummarizeRequest={handleSummarizeRequest}
-            onExplainWithKBRequest={handleExplainWithKBRequest}
-            onExpandWithKBRequest={handleExpandWithKBRequest}
-            onSummarizeWithKBRequest={handleSummarizeWithKBRequest}
+            onExplainWithRAGRequest={handleExplainWithRAGRequest}
+            onExpandWithRAGRequest={handleExpandWithRAGRequest}
+            onSummarizeWithRAGRequest={handleSummarizeWithRAGRequest}
             key={currentNote.id}
           />
         </div>

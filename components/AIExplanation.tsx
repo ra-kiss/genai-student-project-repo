@@ -144,7 +144,7 @@ export default function AIExplanation({
               <Divider />
               <Card
                 size="small"
-                title={<Text strong style={{ color: '#722ed1' }}>📚 Knowledge Base Context Used</Text>}
+                title={<Text strong style={{ color: '#722ed1' }}>📚 RAG Context Used</Text>}
                 style={{ marginBottom: '16px', backgroundColor: '#1f1f1f', borderColor: '#722ed1' }}
               >
                 <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
@@ -157,7 +157,7 @@ export default function AIExplanation({
                   ))}
                 </div>
                 <Text type="secondary" style={{ fontSize: '11px', display: 'block', marginTop: '8px' }}>
-                  {ragContext.length} input example{ragContext.length !== 1 ? 's' : ''} from knowledge base
+                  {ragContext.length} input example{ragContext.length !== 1 ? 's' : ''} from RAG
                 </Text>
               </Card>
             </>
