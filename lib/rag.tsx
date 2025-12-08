@@ -48,31 +48,31 @@ async function loadEmbedder() {
   return embedder;
 }
 
+// NOT USED ANYMORE
 /**
- * Simple semantic search without FAISS (using embeddings only)
+ * Simple semantic search using embeddings
  * Returns results based on cosine similarity
  */
-function cosineSimilarity(a: Float32Array, b: Float32Array): number {
-  let dotProduct = 0;
-  let normA = 0;
-  let normB = 0;
+// function cosineSimilarity(a: Float32Array, b: Float32Array): number {
+//   let dotProduct = 0;
+//   let normA = 0;
+//   let normB = 0;
 
-  for (let i = 0; i < a.length; i++) {
-    dotProduct += a[i] * b[i];
-    normA += a[i] * a[i];
-    normB += b[i] * b[i];
-  }
+//   for (let i = 0; i < a.length; i++) {
+//     dotProduct += a[i] * b[i];
+//     normA += a[i] * a[i];
+//     normB += b[i] * b[i];
+//   }
 
-  normA = Math.sqrt(normA);
-  normB = Math.sqrt(normB);
+//   normA = Math.sqrt(normA);
+//   normB = Math.sqrt(normB);
 
-  if (normA === 0 || normB === 0) return 0;
-  return dotProduct / (normA * normB);
-}
+//   if (normA === 0 || normB === 0) return 0;
+//   return dotProduct / (normA * normB);
+// }
 
 /**
  * Retrieve relevant chunks from the RAG system (outputs only for search display)
- * Falls back to simple similarity search without FAISS
  * @param query - The search query
  * @param topK - Number of results to return (default: 10)
  */
