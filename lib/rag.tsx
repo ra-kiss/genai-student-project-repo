@@ -3,23 +3,20 @@ import path from 'path';
 import { parse } from 'csv-parse/sync';
 import { pipeline } from '@xenova/transformers';
 
-// Dynamic import for faiss-node to avoid Next.js issues
-let IndexFlatL2: any = null;
-
 // Lazy-loaded resources
 let metadata: any[] = [];
 let embedder: any = null;
-let faissIndex: any = null;
 
 /**
- * Initialize FAISS index and metadata
+ * Initialize metadata only (skip FAISS for now due to Next.js native binding issues)
  */
 async function initializeRAG() {
+  if (metadata.length > 0) return;
+
   const ragDataPath = path.join(process.cwd(), 'rag-data');
   const metadataPath = path.join(ragDataPath, 'metadata.csv');
-  const indexPath = path.join(ragDataPath, 'faiss_index');
 
-  // Load metadata.csv
+  // load metadata.csv
   if (metadata.length === 0) {
     try {
       const metadataCSV = fs.readFileSync(metadataPath, 'utf-8');
@@ -31,29 +28,6 @@ async function initializeRAG() {
     } catch (error) {
       console.error('Error loading metadata:', error);
       metadata = [];
-    }
-  }
-
-  // Load FAISS index (only try once)
-  if (faissIndex === null) {
-    if (!fs.existsSync(indexPath)) {
-      console.warn('FAISS index file not found at:', indexPath);
-      faissIndex = false;
-    } else {
-      try {
-        console.log('Attempting to load FAISS index from:', indexPath);
-        // Dynamic import to avoid Next.js bundling issues
-        const faiss = await import('faiss-node');
-        IndexFlatL2 = faiss.IndexFlatL2;
-        
-        // Read the FAISS index from file
-        faissIndex = IndexFlatL2.read(indexPath);
-        console.log('Loaded FAISS index with', faissIndex.ntotal(), 'vectors');
-      } catch (error) {
-        console.error('Error loading FAISS index:', error);
-        console.log('Falling back to simple similarity search');
-        faissIndex = false; // Mark as failed to avoid retrying
-      }
     }
   }
 }
@@ -98,7 +72,7 @@ function cosineSimilarity(a: Float32Array, b: Float32Array): number {
 
 /**
  * Retrieve relevant chunks from the RAG system (outputs only for search display)
- * Uses FAISS index if available, falls back to simple similarity search
+ * Falls back to simple similarity search without FAISS
  * @param query - The search query
  * @param topK - Number of results to return (default: 10)
  */
@@ -124,77 +98,30 @@ export async function retrieveRelevantChunks(query: string, topK: number = 10) {
     const queryEmbedding = await model(query, { pooling: 'mean', normalize: true });
     const queryVector = Float32Array.from(queryEmbedding.data);
 
-    // Filter metadata for output types only
-    const outputMetadata = metadata.filter((item: any) => 
-      item.Type && item.Type.toLowerCase() === 'output'
-    );
-
-    let results: any[] = [];
-
-    // Use FAISS index if available
-    if (faissIndex && faissIndex !== false) {
-      try {
-        console.log('→ Using FAISS index for search');
+    // Simple similarity search on metadata - filter for output types only
+    const results = metadata
+      .filter((item: any) => item.Type && item.Type.toLowerCase() === 'output')
+      .map((item: any, idx: number) => {
+        // Use a simple scoring based on text matching as fallback
+        const chunkText = (item.Text || item.chunk || item.text || '').toString().toLowerCase();
+        const queryLower = query.toLowerCase();
         
-        // Search FAISS index
-        const k = Math.min(topK * 2, faissIndex.ntotal()); // Get more results to filter by type
-        const searchResults = faissIndex.search(queryVector, k);
+        // Simple similarity: how many query words appear in chunk
+        const queryWords = queryLower.split(/\s+/);
+        const matches = queryWords.filter((word) =>
+          chunkText.includes(word) && word.length > 2
+        ).length;
         
-        // Map results to metadata (filter for outputs)
-        results = searchResults.labels
-          .map((idx: number, i: number) => {
-            const metadataItem = metadata[idx];
-            if (!metadataItem || metadataItem.Type?.toLowerCase() !== 'output') {
-              return null;
-            }
-            // Normalize distance to 0-1 range (L2 distance, smaller is better)
-            // Convert to similarity score (1 - normalized_distance)
-            const normalizedDistance = Math.min(searchResults.distances[i] / 2, 1);
-            return {
-              index: idx,
-              distance: normalizedDistance,
-              ...metadataItem,
-            };
-          })
-          .filter((item: any) => item !== null)
-          .slice(0, topK);
-        
-        console.log('✓ FAISS retrieved', results.length, 'output results');
-      } catch (error) {
-        console.error('✗ Error using FAISS index:', error);
-        console.log('→ Falling back to embedding-based similarity');
-        faissIndex = false; // Disable FAISS for future calls
-      }
-    }
+        const distance = 1 - (matches / Math.max(queryWords.length, 1)) * 0.5;
 
-    // Fallback: Use embeddings with cosine similarity (better than text matching)
-    if (faissIndex === false || results.length === 0) {
-      console.log('→ Using embedding-based cosine similarity (no FAISS native bindings in Next.js)');
-      
-      // We need to compute embeddings for all chunks - this is expensive but accurate
-      // For better performance, pre-compute and cache embeddings
-      const chunkTexts = outputMetadata.map((item: any) => 
-        item.Text || item.chunk || item.text || ''
-      );
-      
-      // Compute similarities
-      const similarities = await Promise.all(
-        chunkTexts.map(async (text: string, idx: number) => {
-          const chunkEmbedding = await model(text, { pooling: 'mean', normalize: true });
-          const chunkVector = Float32Array.from(chunkEmbedding.data);
-          const similarity = cosineSimilarity(queryVector, chunkVector);
-          return {
-            index: idx,
-            distance: 1 - similarity, // Convert similarity to distance
-            ...outputMetadata[idx],
-          };
-        })
-      );
-      
-      results = similarities
-        .sort((a: any, b: any) => a.distance - b.distance)
-        .slice(0, topK);
-    }
+        return {
+          index: idx,
+          distance,
+          ...item,
+        };
+      })
+      .sort((a: any, b: any) => a.distance - b.distance)
+      .slice(0, topK);
 
     console.log('Retrieved', results.length, 'results');
     return results;
@@ -206,7 +133,6 @@ export async function retrieveRelevantChunks(query: string, topK: number = 10) {
 
 /**
  * Retrieve input chunks for OpenAI context enhancement
- * Uses FAISS index if available, falls back to simple similarity search
  * @param query - The search query
  * @param topK - Number of results to return (default: 5)
  */
@@ -215,89 +141,36 @@ export async function retrieveInputChunks(query: string, topK: number = 5) {
     // Initialize RAG resources
     await initializeRAG();
 
-    // Load embedding model
-    const model = await loadEmbedder();
-
-    if (!model) {
-      console.warn('Embedder not available, returning empty results');
-      return [];
-    }
-
     if (metadata.length === 0) {
       console.warn('No metadata available, returning empty results');
       return [];
     }
 
-    // Embed the query
-    const queryEmbedding = await model(query, { pooling: 'mean', normalize: true });
-    const queryVector = Float32Array.from(queryEmbedding.data);
+    const queryLower = query.toLowerCase();
 
-    // Filter metadata for input types only
-    const inputMetadata = metadata.filter((item: any) => 
-      item.Type && item.Type.toLowerCase() === 'input'
-    );
-
-    let results: any[] = [];
-
-    // Use FAISS index if available
-    if (faissIndex && faissIndex !== false) {
-      try {
-        console.log('→ Using FAISS index for input chunks');
+    // Simple similarity search on metadata - filter for input types only
+    const results = metadata
+      .filter((item: any) => item.Type && item.Type.toLowerCase() === 'input')
+      .map((item: any, idx: number) => {
+        // Use a simple scoring based on text matching as fallback
+        const chunkText = (item.Text || item.chunk || item.text || '').toString().toLowerCase();
         
-        // Search FAISS index
-        const k = Math.min(topK * 2, faissIndex.ntotal()); // Get more results to filter by type
-        const searchResults = faissIndex.search(queryVector, k);
+        // Simple similarity: how many query words appear in chunk
+        const queryWords = queryLower.split(/\s+/);
+        const matches = queryWords.filter((word) =>
+          chunkText.includes(word) && word.length > 2
+        ).length;
         
-        // Map results to metadata (filter for inputs)
-        results = searchResults.labels
-          .map((idx: number, i: number) => {
-            const metadataItem = metadata[idx];
-            if (!metadataItem || metadataItem.Type?.toLowerCase() !== 'input') {
-              return null;
-            }
-            // Normalize distance to 0-1 range
-            const normalizedDistance = Math.min(searchResults.distances[i] / 2, 1);
-            return {
-              index: idx,
-              distance: normalizedDistance,
-              ...metadataItem,
-            };
-          })
-          .filter((item: any) => item !== null)
-          .slice(0, topK);
-        
-        console.log('✓ FAISS retrieved', results.length, 'input chunks for OpenAI context');
-      } catch (error) {
-        console.error('✗ Error using FAISS index for inputs:', error);
-      }
-    }
+        const distance = 1 - (matches / Math.max(queryWords.length, 1)) * 0.5;
 
-    // Fallback: Use embeddings with cosine similarity
-    if (faissIndex === false || results.length === 0) {
-      console.log('→ Using embedding-based cosine similarity for input chunks');
-      
-      const chunkTexts = inputMetadata.map((item: any) => 
-        item.Text || item.chunk || item.text || ''
-      );
-      
-      // Compute similarities
-      const similarities = await Promise.all(
-        chunkTexts.map(async (text: string, idx: number) => {
-          const chunkEmbedding = await model(text, { pooling: 'mean', normalize: true });
-          const chunkVector = Float32Array.from(chunkEmbedding.data);
-          const similarity = cosineSimilarity(queryVector, chunkVector);
-          return {
-            index: idx,
-            distance: 1 - similarity,
-            ...inputMetadata[idx],
-          };
-        })
-      );
-      
-      results = similarities
-        .sort((a: any, b: any) => a.distance - b.distance)
-        .slice(0, topK);
-    }
+        return {
+          index: idx,
+          distance,
+          ...item,
+        };
+      })
+      .sort((a: any, b: any) => a.distance - b.distance)
+      .slice(0, topK);
 
     console.log('Retrieved', results.length, 'input chunks for OpenAI context');
     return results;
