@@ -1,11 +1,3 @@
-Hi this is a placeholder README. I will write a better one in the near future :)
-
-To use this project make sure you have node installed, clone it, and run the following:
-```
-npm install
-npm run dev
-```
-
 # AI Assistant for CS Students
 
 ## Overview
@@ -16,7 +8,17 @@ Built with an LLM and Retrieval-Augmented Generation (RAG) pipeline, sentence em
 
 ## Setup Instructions
 
-## Usage
+1. ### Install Node.js 22 or newer
+2. ### Clone the repository
+    * `git clone https://github.com/ra-kiss/genai-student-project-repo.git` 
+    * `cd genai-student-project-repo`
+3. ### Install the necessary packages
+    * `npm install`
+4. ### Ensure your OpenAI API Key is loaded as an environment variable
+    - Create a file `.env.local` in the project folder, and add your API key inside as seen below:
+    - `NEXT_PUBLIC_OPENAI_API_KEY=sk-proj-...`
+5. ### Run the project, and view it on `http://localhost:3000`
+    - `npm run dev`
 
 **Note:** The application requires an OpenAI API key, which is not provided here.
 

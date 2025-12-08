@@ -8,7 +8,6 @@ import {
   EditOutlined,
   DeleteOutlined,
   ReloadOutlined,
-  ShuffleOutlined,
   CheckCircleOutlined,
   QuestionCircleOutlined,
 } from '@ant-design/icons';
