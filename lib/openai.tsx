@@ -1,6 +1,7 @@
 import { Flashcard } from '../types';
 
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+// Now we call our own API route instead of OpenAI directly
+const API_URL = '/api/openai';
 
 export interface RAGContext {
   distance?: number;
@@ -13,31 +14,20 @@ export interface RAGContext {
 }
 
 /**
- * Makes a request to OpenAI's Chat Completions API
+ * Makes a request to our Next.js API route (which then calls OpenAI)
  */
 async function makeOpenAIRequest(messages: Array<{ role: string; content: string }>) {
-  const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
-
-  if (!apiKey || apiKey === 'your_openai_api_key_here') {
-    throw new Error('OpenAI API key not configured. Please add your API key to .env.local');
-  }
-
-  const response = await fetch(OPENAI_API_URL, {
+  const response = await fetch(API_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages,
-      temperature: 0.7,
-    }),
+    body: JSON.stringify({ messages }),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error?.message || 'Failed to connect to OpenAI');
+    throw new Error(error.error || 'Failed to connect to API');
   }
 
   const data = await response.json();

@@ -16,7 +16,7 @@ Built with an LLM and Retrieval-Augmented Generation (RAG) pipeline, sentence em
     * `npm install`
 4. ### Ensure your OpenAI API Key is loaded as an environment variable
     - Create a file `.env.local` in the project folder, and add your API key inside as seen below:
-    - `NEXT_PUBLIC_OPENAI_API_KEY=sk-proj-...`
+    - `OPENAI__API_KEY=sk-proj-...`
 5. ### Run the project, and view it on `http://localhost:3000`
     - `npm run dev`
 
